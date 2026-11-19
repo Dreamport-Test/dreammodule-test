@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: rustup target add wasm32-unknown-unknown
       - run: cargo build --release --locked --target wasm32-unknown-unknown
       - run: |
@@ -16,7 +16,7 @@ jobs:
           cp target/wasm32-unknown-unknown/release/dream_module.wasm out/module.wasm
           cp module.json out/
           sha256sum out/module.wasm | cut -d' ' -f1 > out/module.wasm.sha256
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with: { name: module, path: out/ }
   publish:
     needs: build
@@ -24,7 +24,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: { name: module, path: out }
       - env:
           GH_TOKEN: ${{ github.token }}
