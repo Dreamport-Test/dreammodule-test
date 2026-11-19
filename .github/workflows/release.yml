@@ -1,0 +1,35 @@
+name: release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup target add wasm32-unknown-unknown
+      - run: cargo build --release --locked --target wasm32-unknown-unknown
+      - run: |
+          mkdir out
+          cp target/wasm32-unknown-unknown/release/dream_module.wasm out/module.wasm
+          cp module.json out/
+          sha256sum out/module.wasm | cut -d' ' -f1 > out/module.wasm.sha256
+      - uses: actions/upload-artifact@v4
+        with: { name: module, path: out/ }
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: module, path: out }
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" out/module.wasm out/module.wasm.sha256 out/module.json \
+            --draft --title "$GITHUB_REF_NAME" --notes "module.wasm SHA-256: $(cat out/module.wasm.sha256)"
+          gh release edit "$GITHUB_REF_NAME" --draft=false
